@@ -31,6 +31,18 @@ namespace Storage.Client
         /// <returns></returns>
         public abstract Task<JObject> GetFtpAsync(string id);
         /// <summary>
+        /// 获取文件信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public abstract Task<JObject> FileAsync(string id);
+        /// <summary>
+        /// 获取FTP分片
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public abstract Task<JArray> GetWorkListAsync(string id);
+        /// <summary>
         /// 向服务节点发送报告
         /// </summary>
         public abstract Task<bool> ReportAsync(FtpReportInfo report);

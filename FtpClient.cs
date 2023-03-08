@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Text;
 
 namespace Storage.Client
 {
     public class FtpClient
     {            
-        #region 主机
+        #region --主机
         private string host = string.Empty;
         /// <summary>
         /// 主机
@@ -25,7 +27,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 登录用户名
+
+        #region --登录用户名
         private string userId = string.Empty;
         /// <summary>
         /// 登录用户名
@@ -42,7 +45,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 密码
+
+        #region --密码
         private string password = string.Empty;
         /// <summary>
         /// 密码
@@ -59,7 +63,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 代理
+
+        #region --代理
         IWebProxy proxy = null;
         /// <summary>
         /// 代理
@@ -76,7 +81,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 端口
+
+        #region --端口
         private int port = 21;
         /// <summary>
         /// 端口
@@ -93,7 +99,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 设置是否允许Ssl
+
+        #region --设置是否允许Ssl
         private bool enableSsl = false;
         /// <summary>
         /// EnableSsl
@@ -110,7 +117,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 使用被动模式
+
+        #region --使用被动模式
         private bool usePassive = true;
         /// <summary>
         /// 被动模式
@@ -127,7 +135,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 二进制方式
+
+        #region --二进制方式
         private bool useBinary = true;
         /// <summary>
         /// 二进制方式
@@ -144,7 +153,8 @@ namespace Storage.Client
             }
         }
         #endregion
-        #region 远端路径
+
+        #region --远端路径
         private string remotePath = "/";
         /// <summary>
         /// 远端路径
@@ -169,6 +179,7 @@ namespace Storage.Client
             }
         }
         #endregion
+
         #region 创建一个FTP连接
         /// <summary>
         /// 创建一个FTP请求
@@ -179,14 +190,14 @@ namespace Storage.Client
         private FtpWebRequest CreateRequest(string url, string method)
         {
             //建立连接
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(url);
+            var request = (FtpWebRequest)WebRequest.Create(url);
             request.Credentials = new NetworkCredential(this.userId, this.password);
             request.Proxy = this.proxy;
-            //request.KeepAlive = true;//命令执行完毕之后关闭连接
+            request.KeepAlive = false;//命令执行完毕之后关闭连接
             request.UseBinary = useBinary;
             request.UsePassive = usePassive;
             request.EnableSsl = enableSsl;
-            request.ServicePoint.ConnectionLimit = 10;
+            request.ServicePoint.ConnectionLimit = 50;
             request.Method = method;
             return request;
         }
@@ -196,7 +207,6 @@ namespace Storage.Client
         {            
             return $"ftp://{host}:{port}";
         }
-
 
         #region --上传一个文件到远端路径下
         /// <summary>
@@ -210,7 +220,7 @@ namespace Storage.Client
             if (localFile.Exists)
             {
                 string url = GetHost() + RemotePath + remoteFileName;
-                FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.UploadFile);
+                var request = CreateRequest(url, WebRequestMethods.Ftp.UploadFile);
 
                 //TcpState state = new FtpState();
                 //request.BeginGetRequestStream(
@@ -227,8 +237,7 @@ namespace Storage.Client
                     {
                         rs.Write(buffer, 0, count);
                         count = fs.Read(buffer, 0, buffer.Length);
-                    }
-                    fs.Close();
+                    }                   
                     result = true;
                 }
                 return result;
@@ -254,7 +263,7 @@ namespace Storage.Client
             {
                 //建立连接
                 string url = GetHost() + RemotePath + serverName;
-                FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.DownloadFile);
+                var request = CreateRequest(url, WebRequestMethods.Ftp.DownloadFile);
                 request.ContentOffset = fs.Length;
                 using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
                 {
@@ -286,7 +295,7 @@ namespace Storage.Client
             bool result = false;
             //建立连接
             string url = GetHost() + RemotePath + oldFileName;
-            FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.Rename);
+            var request = CreateRequest(url, WebRequestMethods.Ftp.Rename);
             request.RenameTo = newFileName;
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
@@ -303,13 +312,13 @@ namespace Storage.Client
         /// <returns></returns>
         public List<string> GetFileList()
         {
-            List<string> result = new List<string>();
+            var result = new List<string>();
             //建立连接
             string url = GetHost() + RemotePath;
-            FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.ListDirectory);
+            var request = CreateRequest(url, WebRequestMethods.Ftp.ListDirectory);
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
-                StreamReader reader = new StreamReader(response.GetResponseStream(), System.Text.Encoding.Default);//中文文件名
+                StreamReader reader = new StreamReader(response.GetResponseStream(), Encoding.Default);
                 string line = reader.ReadLine();
                 while (line != null)
                 {
@@ -331,7 +340,7 @@ namespace Storage.Client
             List<string> result = new List<string>();
             //建立连接
             string url = GetHost() + RemotePath;
-            FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.ListDirectoryDetails);
+            var request = CreateRequest(url, WebRequestMethods.Ftp.ListDirectoryDetails);
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
                 StreamReader reader = new StreamReader(response.GetResponseStream(), System.Text.Encoding.Default);//中文文件名
@@ -357,11 +366,11 @@ namespace Storage.Client
             bool result = false;
             //建立连接
             string url = GetHost() + RemotePath + fileName;
-            FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.DeleteFile);
+            var request = CreateRequest(url, WebRequestMethods.Ftp.DeleteFile);
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
                 result = true;
-            }
+            }            
             return result;
         }
         #endregion
@@ -377,7 +386,7 @@ namespace Storage.Client
             bool result = false;
             //建立连接
             string url = GetHost() + RemotePath + dirName;
-            FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.MakeDirectory);
+            var request = CreateRequest(url, WebRequestMethods.Ftp.MakeDirectory);
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
                 result = true;
@@ -397,7 +406,7 @@ namespace Storage.Client
             bool result = false;
             //建立连接
             string url = GetHost() + RemotePath + dirName;
-            FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.RemoveDirectory);
+            var request = CreateRequest(url, WebRequestMethods.Ftp.RemoveDirectory);
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
                 result = true;
@@ -417,7 +426,7 @@ namespace Storage.Client
             long result = 0;
             //建立连接
             string url = GetHost() + RemotePath + fileName;
-            FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.GetFileSize);
+            var request = CreateRequest(url, WebRequestMethods.Ftp.GetFileSize);
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
                 result = response.ContentLength;
@@ -457,7 +466,7 @@ namespace Storage.Client
             {
                 //建立连接
                 string url = GetHost() + RemotePath + remoteFileName;
-                FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.AppendFile);
+                var request = CreateRequest(url, WebRequestMethods.Ftp.AppendFile);
                 using (Stream rs = request.GetRequestStream())
                 {
                     //上传数据
@@ -485,7 +494,7 @@ namespace Storage.Client
             {
                 string result = string.Empty;
                 string url = GetHost() + RemotePath;
-                FtpWebRequest request = CreateRequest(url, WebRequestMethods.Ftp.PrintWorkingDirectory);
+                var request = CreateRequest(url, WebRequestMethods.Ftp.PrintWorkingDirectory);
                 using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
                 {
                     string temp = response.StatusDescription;
@@ -513,18 +522,8 @@ namespace Storage.Client
             if (fileName != null && fileName.Trim().Length > 0)
             {
                 fileName = fileName.Trim();
-                List<string> files = GetFileList();
-                if (files != null && files.Count > 0)
-                {
-                    foreach (string file in files)
-                    {
-                        if (file.ToLower() == fileName.ToLower())
-                        {
-                            result = true;
-                            break;
-                        }
-                    }
-                }
+                var files = GetFileList();
+                result = files.FirstOrDefault(t => t.ToLower() == fileName.ToLower()) != null;                
             }
             return result;
         }

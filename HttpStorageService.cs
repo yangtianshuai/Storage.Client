@@ -139,5 +139,27 @@ namespace Storage.Client
             }
             return JsonConvert.DeserializeObject<JObject>(res.Data.ToString());
         }
+
+        public override async Task<JArray> GetWorkListAsync(string id)
+        {
+            var url = $"{Client.service_url}/ftp/FileList?file_id={id}";
+            var res = JsonConvert.DeserializeObject<ResponseResult>(await HttpHelper.GetAsync(url));
+            if (res == null || !res.IsSuccess())
+            {
+                return null;
+            }
+            return JsonConvert.DeserializeObject<JArray>(res.Data.ToString());
+        }
+
+        public override async Task<JObject> FileAsync(string id)
+        {
+            var url = $"{Client.service_url}/web/file?id={id}";
+            var res = JsonConvert.DeserializeObject<ResponseResult>(await HttpHelper.GetAsync(url));
+            if (res == null || !res.IsSuccess())
+            {
+                return null;
+            }
+            return JsonConvert.DeserializeObject<JObject>(res.Data.ToString());
+        }
     }
 }

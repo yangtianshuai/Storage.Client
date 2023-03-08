@@ -30,6 +30,8 @@ namespace Storage.Client
         /// </summary>
         public string file_path { get; set; }
 
+        private string directory;
+
         public StorageTask(FileSegment file, StorageConfig config)
         {
             this.store_config = config;
@@ -46,12 +48,15 @@ namespace Storage.Client
             {
                 Directory.CreateDirectory(file_path);
             }
+            directory = file_path;
             file_path = Path.Combine(file_path, file_no.ToString() + ".sto");
-            File.WriteAllBytes(file_path, file.content);
-
-            file_size = file.content.Length;
-
-            file.content = null;
+            if (file.content != null && file.content.Length > 0)
+            {
+                File.WriteAllBytes(file_path, file.content);
+                file_size = file.content.Length;
+                file.content = null;
+            }
+            
             id = Guid.NewGuid().ToString("N");
         }
 
@@ -60,8 +65,15 @@ namespace Storage.Client
         /// </summary>
         public void Close()
         {
-            //本地清理
-            File.Delete(file_path);
+            if(File.Exists(file_path))
+            {
+                File.Delete(file_path);
+            }            
+            if(Directory.Exists(directory) && Directory.GetFiles(directory).Length == 0)
+            {
+                //本地清理
+                Directory.Delete(directory);
+            }            
         }
 
     }

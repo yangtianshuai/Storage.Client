@@ -12,7 +12,7 @@ namespace Storage.Client
     {
         public static AbstractStorage Storage { get; private set; }
 
-        public static Queue<StorageTask> tasks = new Queue<StorageTask>();
+        public static ConcurrentQueue<StorageTask> tasks = new ConcurrentQueue<StorageTask>();
         private static bool flag = true;
         private static Thread thread;
         private static int step = 5000;
@@ -31,13 +31,16 @@ namespace Storage.Client
 
             if (thread == null)
             {
-                thread = new Thread(() =>
+                thread = new Thread(async () =>
                 {
                     while (flag)
                     {
                         if (tasks.Count > 0)
                         {
-                            Deal(tasks.Dequeue());
+                            if(tasks.TryDequeue(out StorageTask task))
+                            {
+                                Deal(task);
+                            }                            
                         }
                         else
                         {
@@ -76,7 +79,7 @@ namespace Storage.Client
         public async static void Deal(StorageTask task)
         {
             //保存至对应存储
-            if (await Storage.Save(task))
+            if (await Storage.SaveAsync(task))
             {
                 //关闭任务
                 task.Close();
